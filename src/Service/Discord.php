@@ -53,7 +53,7 @@ class Discord
     {
         return $this->httpClient->request(
             'GET',
-            '/api/v9/guilds/'.$guildId.'/roles',
+            '/api/v9/guilds/'.$guildId,
             [
                 'auth_bearer' => $this->security->getUser()->getCurrentAccessToken()['access_token']
             ]

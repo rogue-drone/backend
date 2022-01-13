@@ -24,5 +24,5 @@ services:
 
 
     app.mixed_jwt_authenticator:
-        class: App\Security\MixedJWTAuthenticator
+        class: App\Security\DiscordAuthenticator
         parent: lexik_jwt_authentication.security.jwt_authenticator
