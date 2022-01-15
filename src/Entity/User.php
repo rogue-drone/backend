@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -30,6 +32,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'text', nullable: true)]
     private $currentAccessToken;
+
+    #[ORM\ManyToMany(targetEntity: Guild::class, mappedBy: 'administrators')]
+    private $guilds;
+
+    #[ORM\OneToMany(mappedBy: 'fleetCommander', targetEntity: Operation::class)]
+    private $operations;
+
+    #[ORM\OneToMany(mappedBy: 'requster', targetEntity: ShipReplacementRequest::class)]
+    private $shipReplacementRequests;
+
+    public function __construct()
+    {
+        $this->guilds = new ArrayCollection();
+        $this->operations = new ArrayCollection();
+        $this->shipReplacementRequests = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -125,6 +143,93 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCurrentAccessToken(?array $currentAccessToken): self
     {
         $this->currentAccessToken = json_encode($currentAccessToken);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Guild[]
+     */
+    public function getGuilds(): Collection
+    {
+        return $this->guilds;
+    }
+
+    public function addGuild(Guild $guild): self
+    {
+        if (!$this->guilds->contains($guild)) {
+            $this->guilds[] = $guild;
+            $guild->addAdministrator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGuild(Guild $guild): self
+    {
+        if ($this->guilds->removeElement($guild)) {
+            $guild->removeAdministrator($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Operation[]
+     */
+    public function getOperations(): Collection
+    {
+        return $this->operations;
+    }
+
+    public function addOperation(Operation $operation): self
+    {
+        if (!$this->operations->contains($operation)) {
+            $this->operations[] = $operation;
+            $operation->setFleetCommander($this);
+        }
+
+        return $this;
+    }
+
+    public function removeOperation(Operation $operation): self
+    {
+        if ($this->operations->removeElement($operation)) {
+            // set the owning side to null (unless already changed)
+            if ($operation->getFleetCommander() === $this) {
+                $operation->setFleetCommander(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|ShipReplacementRequest[]
+     */
+    public function getShipReplacementRequests(): Collection
+    {
+        return $this->shipReplacementRequests;
+    }
+
+    public function addShipReplacementRequest(ShipReplacementRequest $shipReplacementRequest): self
+    {
+        if (!$this->shipReplacementRequests->contains($shipReplacementRequest)) {
+            $this->shipReplacementRequests[] = $shipReplacementRequest;
+            $shipReplacementRequest->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShipReplacementRequest(ShipReplacementRequest $shipReplacementRequest): self
+    {
+        if ($this->shipReplacementRequests->removeElement($shipReplacementRequest)) {
+            // set the owning side to null (unless already changed)
+            if ($shipReplacementRequest->getPlayer() === $this) {
+                $shipReplacementRequest->setPlayer(null);
+            }
+        }
 
         return $this;
     }

@@ -3,7 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\GuildRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: GuildRepository::class)]
 class Guild
@@ -11,13 +15,27 @@ class Guild
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private $id;
+    private int $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $name;
+    #[Groups(['list', 'show'])]
+    private string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $discordId;
+    #[Groups(['list', 'show'])]
+    private string $discordId;
+
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'guilds')]
+    private Collection $administrators;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['list', 'show'])]
+    private $icon;
+
+    #[Pure] public function __construct()
+    {
+        $this->administrators = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -36,14 +54,51 @@ class Guild
         return $this;
     }
 
-    public function getDiscordId(): ?int
+    public function getDiscordId(): ?string
     {
         return $this->discordId;
     }
 
-    public function setDiscordId(int $discordId): self
+    public function setDiscordId(string $discordId): self
     {
         $this->discordId = $discordId;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<User>
+     */
+    public function getAdministrators(): Collection
+    {
+        return $this->administrators;
+    }
+
+    public function addAdministrator(User $administrator): self
+    {
+        if (!$this->administrators->contains($administrator)) {
+            $this->administrators[] = $administrator;
+            $administrator->addGuild($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAdministrator(User $administrator): self
+    {
+        $this->administrators->removeElement($administrator);
+
+        return $this;
+    }
+
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
+
+    public function setIcon(?string $icon): self
+    {
+        $this->icon = $icon;
 
         return $this;
     }

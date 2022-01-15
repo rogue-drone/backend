@@ -26,3 +26,12 @@ services:
     app.mixed_jwt_authenticator:
         class: App\Security\DiscordAuthenticator
         parent: lexik_jwt_authentication.security.jwt_authenticator
+    
+    RestCord\DiscordClient:
+        arguments:
+            $options:
+                token: '%env(resolve:OAUTH_DISCORD_BOT_ID)%'
+    
+    App\Service\Restcord:
+        arguments:
+            $client: '@RestCord\DiscordClient'
