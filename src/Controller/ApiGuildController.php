@@ -8,6 +8,7 @@ use App\Repository\GuildRepository;
 use App\Service\Restcord;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -15,7 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class ApiGuildController extends AbstractController
 {
     #[Route('/api/guild', name: 'api_guild')]
-    public function index(GuildRepository $repository): Response
+    public function index(GuildRepository $repository): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -23,9 +24,8 @@ class ApiGuildController extends AbstractController
     }
 
     #[Route('/api/guild/{discordId}', name: 'api_guild_show')]
-    public function show(Guild $guild, Restcord $restcord)
+    public function show(Guild $guild): JsonResponse
     {
-        dump($restcord->getGuild($guild->getDiscordId()));
         return $this->json($guild, context: ['groups' => 'list']);
     }
 }

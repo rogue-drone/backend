@@ -52,7 +52,7 @@ class AuthController extends AbstractController
         $response->headers->setCookie(
             Cookie::create('token')
             ->withValue($manager->createFromPayload($user, [
-                'discordToken' => $user->getCurrentAccessToken()
+                'discordToken' => $user->getCurrentAccessToken()['access_token']
             ]))
             ->withExpires((new \DateTime)->setTimestamp($user->getCurrentAccessToken()['expires']))
             ->withSecure(true)
