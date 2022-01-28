@@ -5,6 +5,9 @@ namespace App\Controller\Api;
 use App\Entity\Guild;
 use App\Entity\User;
 use App\Repository\GuildRepository;
+use App\Service\Discord;
+use App\Service\Restcord;
+use JsonException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +22,15 @@ class GuildController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         return $this->json($user->getManagedGuilds(), context: ['groups' => 'list']);
+    }
+
+    /**
+     * @throws JsonException
+     */
+    #[Route('/api/guild/connectable', name: 'api_guild_connectable')]
+    public function connectable(Restcord $discord): JsonResponse
+    {
+        return $this->json($discord->getUserGuilds($this->getUser()), context: ['groups' => 'list']);
     }
 
     #[Route('/api/guild/{discordId}', name: 'api_guild_show')]

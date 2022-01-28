@@ -1,0 +1,8 @@
+RestCord\Model\Guild\Guild:
+    attributes:
+        icon:
+            groups: ['list']
+        id:
+            groups: ['list']
+        name:
+            groups: ['list']

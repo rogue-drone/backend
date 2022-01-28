@@ -65,8 +65,14 @@ class AuthController extends AbstractController
 
     #[Route('/bot/connect', name: 'connect_bot_start')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function connectBot(ClientRegistry $registry): RedirectResponse
+    public function connectBot(ClientRegistry $registry, Request $request): RedirectResponse
     {
+        $options = [];
+
+        if ($request->query->has('guild_id')) {
+            $options['guild_id'] = $request->query->get('guild_id');
+        }
+
         /** @var DiscordClient $client */
         $client = $registry->getClient('bot');
         return $client->redirect(
@@ -75,7 +81,8 @@ class AuthController extends AbstractController
                 'applications.commands',
                 'guilds',
                 'guilds.members.read'
-            ]
+            ],
+            $options
         );
     }
 
