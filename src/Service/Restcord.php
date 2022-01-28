@@ -8,12 +8,9 @@ use RestCord\Model\Guild\GuildMember;
 
 class Restcord
 {
-    private DiscordClient $client;
-
-    public function __construct(DiscordClient $client)
-    {
-        $this->client = $client;
-    }
+    public function __construct(
+        private DiscordClient $client
+    ) {}
 
     public function getGuild($guildId): Guild
     {

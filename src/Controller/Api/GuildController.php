@@ -1,30 +1,34 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Api;
 
 use App\Entity\Guild;
 use App\Entity\User;
 use App\Repository\GuildRepository;
-use App\Service\Restcord;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
-class ApiGuildController extends AbstractController
+class GuildController extends AbstractController
 {
     #[Route('/api/guild', name: 'api_guild')]
     public function index(GuildRepository $repository): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
-        return $this->json($user->getGuilds(), context: ['groups' => 'list']);
+        return $this->json($user->getManagedGuilds(), context: ['groups' => 'list']);
     }
 
     #[Route('/api/guild/{discordId}', name: 'api_guild_show')]
     public function show(Guild $guild): JsonResponse
+    {
+        return $this->json($guild, context: ['groups' => 'list']);
+    }
+
+    #[Route('/api/guild/{discordId}/acl', name: 'api_guild_show')]
+    public function acl(Guild $guild): JsonResponse
     {
         return $this->json($guild, context: ['groups' => 'list']);
     }

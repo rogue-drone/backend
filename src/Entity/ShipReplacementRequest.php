@@ -11,18 +11,18 @@ class ShipReplacementRequest
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private $id;
+    private ?int $id;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'shipReplacementRequests')]
     #[ORM\JoinColumn(nullable: false)]
-    private $player;
+    private ?User $player;
 
     #[ORM\ManyToOne(targetEntity: Operation::class, inversedBy: 'shipReplacementRequests')]
     #[ORM\JoinColumn(nullable: false)]
-    private $operation;
+    private ?Operation $operation;
 
     #[ORM\Column(type: 'text')]
-    private $description;
+    private ?string $description;
 
     public function getId(): ?int
     {

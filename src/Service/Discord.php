@@ -2,60 +2,101 @@
 
 namespace App\Service;
 
+use App\Entity\User;
+use JsonException;
 use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class Discord
 {
-    private HttpClientInterface $httpClient;
-    private Security $security;
+    public function __construct(
+        private HttpClientInterface $discord,
+        private Security $security
+    ) {}
 
-    public function __construct(HttpClientInterface $discord, Security $security)
+    private function getUser(): User|UserInterface
     {
-        $this->httpClient = $discord;
-        $this->security = $security;
+        return $this->security->getUser();
     }
 
-    public function fetchProfile()
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     * @throws JsonException
+     */
+    public function fetchProfile(): array
     {
-        return $this->httpClient->request(
+        return $this->discord->request(
             'GET',
             '/api/v9/users/@me',
             [
-                'auth_bearer' => $this->security->getUser()->getCurrentAccessToken()['access_token']
+                'auth_bearer' => $this->getUser()->getCurrentAccessToken()['access_token']
             ]
         )->toArray();
     }
 
-    public function fetchGuilds()
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     * @throws JsonException
+     */
+    public function fetchGuilds(): array
     {
-        return $this->httpClient->request(
+        return $this->discord->request(
             'GET',
             '/api/v9/users/@me/guilds',
             [
-                'auth_bearer' => $this->security->getUser()->getCurrentAccessToken()['access_token']
+                'auth_bearer' => $this->getUser()->getCurrentAccessToken()['access_token']
             ]
         )->toArray();
     }
 
-    public function fetchGuildMemberInfo($guildId)
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     * @throws JsonException
+     */
+    public function fetchGuildMemberInfo($guildId): array
     {
-        return $this->httpClient->request(
+        return $this->discord->request(
             'GET',
             '/api/v9/users/@me/guilds/'.$guildId.'/member',
             [
-                'auth_bearer' => $this->security->getUser()->getCurrentAccessToken()['access_token']
+                'auth_bearer' => $this->getUser()->getCurrentAccessToken()['access_token']
             ]
         )->toArray();
     }
 
-    public function fetchGuildInfo($guildId)
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     * @throws JsonException
+     */
+    public function fetchGuildInfo($guildId): array
     {
-        return $this->httpClient->request(
+        return $this->discord->request(
             'GET',
             '/api/v9/guilds/'.$guildId,
             [
-                'auth_bearer' => $this->security->getUser()->getCurrentAccessToken()['access_token']
+                'auth_bearer' => $this->getUser()->getCurrentAccessToken()['access_token']
             ]
         )->toArray();
     }

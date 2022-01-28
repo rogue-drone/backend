@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use JsonException;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
 use League\OAuth2\Client\Token\AccessToken;
@@ -22,16 +23,12 @@ use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
 
 class DiscordAuthenticator extends OAuth2Authenticator
 {
-    private ClientRegistry $clientRegistry;
-    private EntityManagerInterface $entityManager;
-    private UserPasswordHasherInterface $passwordHasher;
-
-    public function __construct(ClientRegistry $clientRegistry, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher)
-    {
-        $this->clientRegistry = $clientRegistry;
-        $this->entityManager = $entityManager;
-        $this->passwordHasher = $passwordHasher;
-    }
+    public function __construct(
+        private ClientRegistry $clientRegistry,
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $passwordHasher
+    )
+    {}
 
     public function supports(Request $request): ?bool
     {
@@ -45,7 +42,7 @@ class DiscordAuthenticator extends OAuth2Authenticator
         $accessToken = $this->fetchAccessToken($client);
 
         return new SelfValidatingPassport(
-            new UserBadge($accessToken->getToken(), function() use ($accessToken, $client) {
+            new UserBadge($accessToken->getToken(), function () use ($accessToken, $client) {
                 /** @var DiscordResourceOwner $discordUser */
                 $discordUser = $client->fetchUserFromToken($accessToken);
 
@@ -78,7 +75,11 @@ class DiscordAuthenticator extends OAuth2Authenticator
         );
     }
 
-    private function updateCurrentToken(User $user, AccessToken $token) {
+    /**
+     * @throws JsonException
+     */
+    private function updateCurrentToken(User $user, AccessToken $token): void
+    {
         $user->setCurrentAccessToken($token->jsonSerialize());
 
         $this->entityManager->persist($user);

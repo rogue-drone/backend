@@ -15,26 +15,32 @@ class Guild
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private int $id;
+    private ?int $id;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['list', 'show'])]
-    private string $name;
+    private ?string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['list', 'show'])]
-    private string $discordId;
-
-    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'guilds')]
-    private Collection $administrators;
+    private ?string $discordId;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['list', 'show'])]
-    private $icon;
+    private ?string $icon;
+
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'managedGuilds')]
+    #[ORM\JoinTable(name: 'guilds_administrators')]
+    private Collection $administrators;
+
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'guilds')]
+    #[ORM\JoinTable(name: 'guilds_users')]
+    private Collection $users;
 
     #[Pure] public function __construct()
     {
         $this->administrators = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -66,6 +72,18 @@ class Guild
         return $this;
     }
 
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
+
+    public function setIcon(?string $icon): self
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
     /**
      * @return Collection<User>
      */
@@ -91,14 +109,26 @@ class Guild
         return $this;
     }
 
-    public function getIcon(): ?string
+    /**
+     * @return Collection<User>
+     */
+    public function getUsers(): Collection
     {
-        return $this->icon;
+        return $this->users;
     }
 
-    public function setIcon(?string $icon): self
+    public function addUser(User $user): self
     {
-        $this->icon = $icon;
+        if (!$this->users->contains($user)) {
+            $this->users[] = $user;
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): self
+    {
+        $this->users->removeElement($user);
 
         return $this;
     }

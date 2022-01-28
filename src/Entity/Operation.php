@@ -3,9 +3,11 @@
 namespace App\Entity;
 
 use App\Repository\OperationRepository;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
 
 #[ORM\Entity(repositoryClass: OperationRepository::class)]
 class Operation
@@ -13,25 +15,25 @@ class Operation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private $id;
+    private ?int $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $name;
+    private ?string $name;
 
     #[ORM\Column(type: 'datetimetz')]
-    private $date;
+    private ?DateTimeInterface $date;
 
     #[ORM\Column(type: 'text')]
-    private $description;
+    private ?string $description;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'operations')]
     #[ORM\JoinColumn(nullable: false)]
-    private $fleetCommander;
+    private ?User $fleetCommander;
 
     #[ORM\OneToMany(mappedBy: 'operation', targetEntity: ShipReplacementRequest::class)]
-    private $shipReplacementRequests;
+    private Collection $shipReplacementRequests;
 
-    public function __construct()
+    #[Pure] public function __construct()
     {
         $this->shipReplacementRequests = new ArrayCollection();
     }
@@ -53,12 +55,12 @@ class Operation
         return $this;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): ?DateTimeInterface
     {
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): self
+    public function setDate(DateTimeInterface $date): self
     {
         $this->date = $date;
 
@@ -90,7 +92,7 @@ class Operation
     }
 
     /**
-     * @return Collection|ShipReplacementRequest[]
+     * @return Collection<ShipReplacementRequest>
      */
     public function getShipReplacementRequests(): Collection
     {
@@ -109,11 +111,12 @@ class Operation
 
     public function removeShipReplacementRequest(ShipReplacementRequest $shipReplacementRequest): self
     {
-        if ($this->shipReplacementRequests->removeElement($shipReplacementRequest)) {
-            // set the owning side to null (unless already changed)
-            if ($shipReplacementRequest->getOperation() === $this) {
-                $shipReplacementRequest->setOperation(null);
-            }
+        // set the owning side to null (unless already changed)
+        if (
+            $this->shipReplacementRequests->removeElement($shipReplacementRequest)
+            && $shipReplacementRequest->getOperation() === $this
+        ) {
+            $shipReplacementRequest->setOperation(null);
         }
 
         return $this;

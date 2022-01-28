@@ -8,9 +8,9 @@ use App\Repository\GuildRepository;
 use App\Repository\UserRepository;
 use App\Service\Restcord;
 use Doctrine\ORM\EntityManagerInterface;
+use JsonException;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Client\Provider\DiscordClient;
-use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,8 +18,8 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
+use function Sentry\captureException;
 
 class AuthController extends AbstractController
 {
@@ -36,12 +36,12 @@ class AuthController extends AbstractController
         ]);
     }
 
+    /**
+     * @throws JsonException
+     */
     #[Route('/auth/connect/check', name: 'connect_discord_check')]
     public function connectCheck(
-        JWTTokenManagerInterface $manager,
-        Request $request,
-        TokenStorageInterface $tokenStorage,
-        ClientRegistry $registry
+        JWTTokenManagerInterface $manager
     ): RedirectResponse
     {
         /** @var string $frontendUrl */
@@ -88,7 +88,7 @@ class AuthController extends AbstractController
         GuildRepository $guildRepository,
         UserRepository $userRepository,
         EntityManagerInterface $entityManager
-    )
+    ): RedirectResponse
     {
         /** @var string $frontendUrl */
         $frontendUrl = $this->getParameter('app.frontend_uri');
@@ -118,19 +118,20 @@ class AuthController extends AbstractController
                 $entityManager->persist($guild);
             }
 
-            if ($guild->getName() != $discordGuild->name) {
+            if ($guild->getName() !== $discordGuild->name) {
                 $guild->setName($discordGuild->name);
             }
 
-            if ($guild->getIcon() != $discordGuild->icon) {
+            if ($guild->getIcon() !== $discordGuild->icon) {
                 $guild->setIcon($discordGuild->icon);
             }
 
             $entityManager->flush();
 
-            return new RedirectResponse($frontendUrl . '/guild/' . $guildDiscordId);
-        } catch (IdentityProviderException $e) {
-            return new RedirectResponse($frontendUrl . '/error');
+            return new RedirectResponse($frontendUrl . 'guild/' . $guildDiscordId);
+        } catch (\Exception $e) {
+            captureException($e);
+            return new RedirectResponse($frontendUrl . 'error');
         }
     }
 }

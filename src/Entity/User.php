@@ -6,6 +6,8 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
+use JsonException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -16,37 +18,41 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private $id;
+    private ?int $id;
 
     #[ORM\Column(type: 'string', length: 180, unique: true)]
-    private $username;
+    private ?string $username;
 
     #[ORM\Column(type: 'json')]
-    private $roles = [];
+    private array $roles = [];
 
     #[ORM\Column(type: 'string')]
-    private $password;
+    private string $password;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $discordId;
+    private ?string $discordId;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private $currentAccessToken;
-
-    #[ORM\ManyToMany(targetEntity: Guild::class, mappedBy: 'administrators')]
-    private $guilds;
+    private ?string $currentAccessToken;
 
     #[ORM\OneToMany(mappedBy: 'fleetCommander', targetEntity: Operation::class)]
-    private $operations;
+    private Collection $operations;
 
-    #[ORM\OneToMany(mappedBy: 'requster', targetEntity: ShipReplacementRequest::class)]
-    private $shipReplacementRequests;
+    #[ORM\OneToMany(mappedBy: 'player', targetEntity: ShipReplacementRequest::class)]
+    private Collection $shipReplacementRequests;
 
-    public function __construct()
+    #[ORM\ManyToMany(targetEntity: Guild::class, mappedBy: 'users')]
+    private Collection $guilds;
+
+    #[ORM\ManyToMany(targetEntity: Guild::class, mappedBy: 'administrators')]
+    private Collection $managedGuilds;
+
+    #[Pure] public function __construct()
     {
-        $this->guilds = new ArrayCollection();
         $this->operations = new ArrayCollection();
         $this->shipReplacementRequests = new ArrayCollection();
+        $this->guilds = new ArrayCollection();
+        $this->managedGuilds = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -113,7 +119,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see UserInterface
      */
-    public function eraseCredentials()
+    public function eraseCredentials(): void
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
@@ -131,51 +137,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @throws JsonException
+     */
     public function getCurrentAccessToken(): ?array
     {
         if ($this->currentAccessToken !== null) {
-            return json_decode($this->currentAccessToken,true);
+            return json_decode($this->currentAccessToken, true, 512, JSON_THROW_ON_ERROR);
         }
 
         return null;
     }
 
+    /**
+     * @throws JsonException
+     */
     public function setCurrentAccessToken(?array $currentAccessToken): self
     {
-        $this->currentAccessToken = json_encode($currentAccessToken);
+        $this->currentAccessToken = json_encode($currentAccessToken, JSON_THROW_ON_ERROR);
 
         return $this;
     }
 
     /**
-     * @return Collection|Guild[]
-     */
-    public function getGuilds(): Collection
-    {
-        return $this->guilds;
-    }
-
-    public function addGuild(Guild $guild): self
-    {
-        if (!$this->guilds->contains($guild)) {
-            $this->guilds[] = $guild;
-            $guild->addAdministrator($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGuild(Guild $guild): self
-    {
-        if ($this->guilds->removeElement($guild)) {
-            $guild->removeAdministrator($this);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|Operation[]
+     * @return Collection<Operation>
      */
     public function getOperations(): Collection
     {
@@ -205,7 +190,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection|ShipReplacementRequest[]
+     * @return Collection<ShipReplacementRequest>
      */
     public function getShipReplacementRequests(): Collection
     {
@@ -229,6 +214,60 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             if ($shipReplacementRequest->getPlayer() === $this) {
                 $shipReplacementRequest->setPlayer(null);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<Guild>
+     */
+    public function getManagedGuilds(): Collection
+    {
+        return $this->managedGuilds;
+    }
+
+    public function addManagedGuild(Guild $guild): self
+    {
+        if (!$this->managedGuilds->contains($guild)) {
+            $this->managedGuilds[] = $guild;
+            $guild->addAdministrator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeManagedGuild(Guild $guild): self
+    {
+        if ($this->managedGuilds->removeElement($guild)) {
+            $guild->removeAdministrator($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<Guild>
+     */
+    public function getGuilds(): Collection
+    {
+        return $this->guilds;
+    }
+
+    public function addGuild(Guild $userGuild): self
+    {
+        if (!$this->guilds->contains($userGuild)) {
+            $this->guilds[] = $userGuild;
+            $userGuild->addUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGuild(Guild $userGuild): self
+    {
+        if ($this->guilds->removeElement($userGuild)) {
+            $userGuild->removeUser($this);
         }
 
         return $this;

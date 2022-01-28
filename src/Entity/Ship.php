@@ -6,6 +6,7 @@ use App\Repository\ShipRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
 
 #[ORM\Entity(repositoryClass: ShipRepository::class)]
 class Ship
@@ -13,15 +14,15 @@ class Ship
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private $id;
+    private ?int $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $name;
+    private ?string $name;
 
     #[ORM\ManyToMany(targetEntity: Doctrine::class, mappedBy: 'ships')]
-    private $doctrines;
+    private Collection $doctrines;
 
-    public function __construct()
+    #[Pure] public function __construct()
     {
         $this->doctrines = new ArrayCollection();
     }
@@ -44,7 +45,7 @@ class Ship
     }
 
     /**
-     * @return Collection|Doctrine[]
+     * @return Collection<Doctrine>
      */
     public function getDoctrines(): Collection
     {
