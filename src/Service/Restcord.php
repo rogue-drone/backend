@@ -7,24 +7,31 @@ use JsonException;
 use RestCord\DiscordClient;
 use RestCord\Model\Guild\Guild;
 use RestCord\Model\Guild\GuildMember;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class Restcord
 {
     public function __construct(
-        private DiscordClient $client
-    ) {}
+        private DiscordClient $client,
+        private Security $security,
+        private ?DiscordClient $userClient
+    ) {
+        if ($this->security->isGranted('IS_AUTHENTICATED_FULLY')) {
+            $this->userClient = new DiscordClient([
+                'token' => $this->security->getUser()->getCurrentAccessToken()['access_token'],
+                'tokenType' => 'OAuth'
+            ]);
+        }
+    }
 
     /**
-     * @param UserInterface $user
      * @return Guild[]
-     * @throws JsonException
      */
-    public function getUserGuilds(UserInterface $user): array
+    public function getUserGuilds(): array
     {
-        return (new DiscordClient(['token' => $user->getCurrentAccessToken()['access_token']]))
-            ->user
-            ->getCurrentUserGuilds([]);
+        return $this->userClient
+            ->user->getCurrentUserGuilds([]);
     }
 
     public function getGuild($guildId): Guild
