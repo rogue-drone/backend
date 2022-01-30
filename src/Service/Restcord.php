@@ -25,6 +25,11 @@ class Restcord
         }
     }
 
+    public function getProfile()
+    {
+        return $this->userClient->user->getCurrentUser([]);
+    }
+
     /**
      * @return Guild[]
      */

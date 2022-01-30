@@ -117,9 +117,6 @@ RUN set -eux; \
 	chmod +x bin/console; sync
 VOLUME /srv/app/var
 
-RUN addgroup -g 1000 -S app
-RUN adduser -u 1000 -S -D -G app app
-
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
 
@@ -139,14 +136,3 @@ COPY --from=dunglas/mercure:v0.11 /srv/public /srv/mercure-assets/
 COPY --from=symfony_caddy_builder /usr/bin/caddy /usr/bin/caddy
 COPY --from=symfony_php /srv/app/public public/
 COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
-
-FROM nginx:stable AS symfony_nginx
-
-RUN addgroup --gid 1000 --system app
-RUN adduser --uid 1000 --system --disabled-login --disabled-password --gid 1000 app
-
-COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/nginx/conf.d/symfony.conf /etc/nginx/conf.d/default.conf
-
-WORKDIR /srv/app
-

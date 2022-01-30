@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\Repository\GuildRepository;
 use App\Service\Discord as DiscordClient;
+use App\Service\Restcord;
 use Doctrine\Common\Collections\ArrayCollection;
 use RestCord\Model\Guild\Guild;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -16,25 +17,12 @@ class UserController extends AbstractController
     #[Route('/api/user', name: 'api_user')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function index(
-        DiscordClient $discord,
+        Restcord $discord,
+        DiscordClient $discordOld,
         GuildRepository $guildRepository
     ): JsonResponse
     {
-
-        /** @var ArrayCollection|Guild[] $guilds */
-//        $guilds = $guildRepository->findBy(['user' => $this->getUser()]);
-//        dump($guilds);
-//        $discordGuilds = array_filter(
-//            $discord->fetchGuilds(),
-//            /** @var Guild $guild */
-//            function ($guild) use ($guilds) {
-//                return 1;
-//            }
-//        );
-
-        $profile = $discord->fetchProfile();
-        $profile['guilds'] = $discord->fetchGuilds();
-//        $profile['genesis'] = $discord->fetchGuildMemberInfo(730587900495921214);
+        $profile = $discord->getProfile();
 
         return $this->json($profile);
     }

@@ -30,8 +30,6 @@ class GuildController extends AbstractController
     #[Route('/api/guild/connectable', name: 'api_guild_connectable')]
     public function connectable(Restcord $discord): JsonResponse
     {
-        dump($discord->getUserGuilds());
-
         return $this->json($discord->getUserGuilds(), context: ['groups' => 'list']);
     }
 

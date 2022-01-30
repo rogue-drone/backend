@@ -13,8 +13,10 @@
 
 log
 
+
 route {
     root * /srv/app/public
+
     mercure {
         # Transport to use (default to Bolt)
         transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
@@ -34,4 +36,14 @@ route {
     php_fastcgi unix//var/run/php/php-fpm.sock
     encode zstd gzip
     file_server
+
+    header Access-Control-Allow-Methods *
+    header Access-Control-Allow-Headers *
+    header Access-Control-Allow-Origin *
+
+
+    @options {
+        method OPTIONS
+    }
+    respond @options 204
 }

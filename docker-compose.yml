@@ -1,20 +1,6 @@
 version: "3.4"
 
 services:
-  nginx:
-    build:
-      context: .
-      target: symfony_nginx
-    ports:
-      - '8000:80'
-    volumes:
-      - php_socket:/sock
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./docker/nginx/conf.d/symfony.conf:/etc/nginx/conf.d/default.conf
-      - .:/srv/app
-    depends_on:
-      - caddy
-
   php:
     build:
       context: .
@@ -24,12 +10,8 @@ services:
         SKELETON: ${SKELETON:-symfony/skeleton}
         STABILITY: ${STABILITY:-stable}
     restart: unless-stopped
-    depends_on:
-      - database
     volumes:
       - php_socket:/var/run/php
-      - ./docker/php/php-fpm.d/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf
-      - .:/srv/app
     healthcheck:
       interval: 10s
       timeout: 3s
@@ -40,7 +22,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-symfony}:${POSTGRES_PASSWORD:-ChangeMe}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-13}
       # Run "composer require symfony/mercure-bundle" to install and configure the Mercure integration
       MERCURE_URL: ${CADDY_MERCURE_URL:-http://caddy/.well-known/mercure}
-      MERCURE_PUBLIC_URL: https://${SERVER_NAME:-127.0.0.1}/.well-known/mercure
+      MERCURE_PUBLIC_URL: https://${SERVER_NAME:-localhost}/.well-known/mercure
       MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-!ChangeMe!}
 
   caddy:
@@ -50,9 +32,10 @@ services:
     depends_on:
       - php
     environment:
-      SERVER_NAME: ${SERVER_NAME:-127.0.0.1, caddy:80}
+      SERVER_NAME: ${SERVER_NAME:-localhost, caddy:80}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeMe!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeMe!}
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$}
     restart: unless-stopped
     volumes:
       - php_socket:/var/run/php
@@ -61,15 +44,15 @@ services:
     ports:
       # HTTP
       - target: 80
-        published: ${HTTP_PORT:-8080}
+        published: ${HTTP_PORT:-80}
         protocol: tcp
       # HTTPS
       - target: 443
-        published: ${HTTPS_PORT:-8081}
+        published: ${HTTPS_PORT:-443}
         protocol: tcp
       # HTTP/3
       - target: 443
-        published: ${HTTP3_PORT:-8081}
+        published: ${HTTP3_PORT:-443}
         protocol: udp
 
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
