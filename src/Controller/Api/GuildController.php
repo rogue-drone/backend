@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 class GuildController extends AbstractController
 {
-    #[Route('/api/guild', name: 'api_guild')]
+    #[Route('/api/guild', name: 'api_guild', methods: ['GET'])]
     public function index(GuildRepository $repository): JsonResponse
     {
         /** @var User $user */
@@ -25,21 +25,26 @@ class GuildController extends AbstractController
     }
 
     /**
-     * @throws JsonException
+     * @param Restcord $discord
+     * @return JsonResponse
      */
-    #[Route('/api/guild/connectable', name: 'api_guild_connectable')]
+    #[Route('/api/guild/connectable', name: 'api_guild_connectable', methods: ['GET'])]
     public function connectable(Restcord $discord): JsonResponse
     {
-        return $this->json($discord->getUserGuilds(), context: ['groups' => 'list']);
+        $guilds = $discord->getUserGuilds();
+
+        $guilds = array_filter($guilds, static fn($guild) => ($guild->permissions & (1 << 5)) == true);
+
+        return $this->json($guilds, context: ['groups' => 'list']);
     }
 
-    #[Route('/api/guild/{discordId}', name: 'api_guild_show')]
+    #[Route('/api/guild/{discordId}', name: 'api_guild_show', methods: ['GET'])]
     public function show(Guild $guild): JsonResponse
     {
-        return $this->json($guild, context: ['groups' => 'list']);
+        return $this->json($guild, context: ['groups' => 'show']);
     }
 
-    #[Route('/api/guild/{discordId}/acl', name: 'api_guild_show')]
+    #[Route('/api/guild/{discordId}/acl', name: 'api_guild_show', methods: ['GET'])]
     public function acl(Guild $guild): JsonResponse
     {
         return $this->json($guild, context: ['groups' => 'list']);
