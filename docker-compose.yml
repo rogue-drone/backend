@@ -9,6 +9,8 @@ services:
         SYMFONY_VERSION: ${SYMFONY_VERSION:-}
         SKELETON: ${SKELETON:-symfony/skeleton}
         STABILITY: ${STABILITY:-stable}
+    depends_on:
+      - database
     restart: unless-stopped
     volumes:
       - php_socket:/var/run/php
@@ -24,6 +26,10 @@ services:
       MERCURE_URL: ${CADDY_MERCURE_URL:-http://caddy/.well-known/mercure}
       MERCURE_PUBLIC_URL: https://${SERVER_NAME:-localhost}/.well-known/mercure
       MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-!ChangeMe!}
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.sync-guilds.schedule: "@every 1h"
+      ofelia.job-exec.sync-guilds.command: "bin/console discord:sync-guilds"
 
   caddy:
     build:
@@ -72,6 +78,15 @@ services:
       # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
+  
+  
+  ofelia:
+    image: mcuadros/ofelia:latest
+    depends_on:
+      - php
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   php_socket:
