@@ -120,18 +120,21 @@ class AuthController extends AbstractController
                 $guild = new Guild();
                 $guild->setDiscordId($guildDiscordId);
                 $guild->addAdministrator($userRepository->findOneBy(['discordId' => $user->getId()]));
+                $guild->addUser($userRepository->findOneBy(['discordId' => $user->getId()]));
                 $guild->setName($discordGuild->name);
-                $guild->setIcon($discordGuild->icon ?? null);
+                $guild->setIcon($discordGuild->getIcon());
                 $entityManager->persist($guild);
+            } else {
+                if ($guild->getName() !== $discordGuild->name) {
+                    $guild->setName($discordGuild->name);
+                }
+
+                if ($guild->getIcon() !== $discordGuild->getIcon()) {
+                    $guild->setIcon($discordGuild->getIcon());
+                }
             }
 
-            if ($guild->getName() !== $discordGuild->name) {
-                $guild->setName($discordGuild->name);
-            }
 
-            if ($guild->getIcon() !== $discordGuild->icon) {
-                $guild->setIcon($discordGuild->icon);
-            }
 
             $entityManager->flush();
 
