@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
 use function Sentry\captureException;
 
@@ -67,7 +68,10 @@ class AuthController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function connectBot(ClientRegistry $registry, Request $request): RedirectResponse
     {
-        $options = [];
+        $options = [
+            'scope' => 'bot',
+            'disable_guild_select' => true
+        ];
 
         if ($request->query->has('guild_id')) {
             $options['guild_id'] = $request->query->get('guild_id');
@@ -107,8 +111,8 @@ class AuthController extends AbstractController
 
         try {
             // the exact class depends on which provider you're using
-            /** @var DiscordResourceOwner $user */
-            $user = $client->fetchUser();
+            /** @var DiscordResourceOwner $discordResourceOwner */
+            $discordResourceOwner = $client->fetchUser();
             $discordGuild = $restcord->getGuild($guildDiscordId);
 
 
@@ -116,11 +120,17 @@ class AuthController extends AbstractController
                 'discordId' => $guildDiscordId
             ]);
 
+            $user = $userRepository->findOneBy(['discordId' => $discordResourceOwner->getId()]);
+
+            if (!$user) {
+                throw new UserNotFoundException();
+            }
+
             if (!$guild) {
                 $guild = new Guild();
                 $guild->setDiscordId($guildDiscordId);
-                $guild->addAdministrator($userRepository->findOneBy(['discordId' => $user->getId()]));
-                $guild->addUser($userRepository->findOneBy(['discordId' => $user->getId()]));
+                $guild->addAdministrator($user);
+                $guild->addUser($user);
                 $guild->setName($discordGuild->name);
                 $guild->setIcon($discordGuild->getIcon());
                 $entityManager->persist($guild);
@@ -133,8 +143,6 @@ class AuthController extends AbstractController
                     $guild->setIcon($discordGuild->getIcon());
                 }
             }
-
-
 
             $entityManager->flush();
 
