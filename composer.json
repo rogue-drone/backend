@@ -5,6 +5,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.1",
+        "ext-bcmath": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "composer/package-versions-deprecated": "1.11.99.4",
@@ -53,8 +54,10 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
-        }
+            "App\\": "src/",
+            "RestCord\\": "restcord/"
+        },
+        "exclude-from-classmap": ["vendor/restcord/restcord/src/Model/"]
     },
     "autoload-dev": {
         "psr-4": {
