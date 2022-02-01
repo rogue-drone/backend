@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
 use function Sentry\captureException;
@@ -64,21 +65,20 @@ class AuthController extends AbstractController
         return $response;
     }
 
-    #[Route('/bot/connect', name: 'connect_bot_start')]
+    #[Route('/bot/connect/{id}', name: 'connect_bot_start')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function connectBot(ClientRegistry $registry, Request $request): RedirectResponse
+    public function connectBot(ClientRegistry $registry, string $id): RedirectResponse
     {
         $options = [
-            'scope' => 'bot',
-            'disable_guild_select' => true
+            'disable_guild_select' => 'true',
+            'guild_id' => (int)$id,
+            'permissions' => 19520,
+            'redirect_uri' => $this->generateUrl('connect_bot_check', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
         ];
 
-        if ($request->query->has('guild_id')) {
-            $options['guild_id'] = $request->query->get('guild_id');
-        }
-
         /** @var DiscordClient $client */
-        $client = $registry->getClient('bot');
+        $client = $registry->getClient('discord');
+
         return $client->redirect(
             [
                 'bot',
@@ -90,7 +90,7 @@ class AuthController extends AbstractController
         );
     }
 
-    #[Route('/bot/connect/check', name: 'connect_bot_check')]
+    #[Route('/bot/connect/check', name: 'connect_bot_check', priority: 2)]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function connectBotCheck(
         Request $request,
@@ -104,15 +104,9 @@ class AuthController extends AbstractController
         /** @var string $frontendUrl */
         $frontendUrl = $this->getParameter('app.frontend_uri');
 
-        /** @var DiscordClient $client */
-        $client = $registry->getClient('bot');
-
         $guildDiscordId = $request->query->get('guild_id');
 
         try {
-            // the exact class depends on which provider you're using
-            /** @var DiscordResourceOwner $discordResourceOwner */
-            $discordResourceOwner = $client->fetchUser();
             $discordGuild = $restcord->getGuild($guildDiscordId);
 
 
@@ -120,11 +114,7 @@ class AuthController extends AbstractController
                 'discordId' => $guildDiscordId
             ]);
 
-            $user = $userRepository->findOneBy(['discordId' => $discordResourceOwner->getId()]);
-
-            if (!$user) {
-                throw new UserNotFoundException();
-            }
+            $user = $this->getUser();
 
             if (!$guild) {
                 $guild = new Guild();

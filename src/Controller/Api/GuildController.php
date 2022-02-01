@@ -33,7 +33,7 @@ class GuildController extends AbstractController
     {
         $guilds = $discord->getUserGuilds();
 
-        $guilds = array_filter($guilds, static fn($guild) => ($guild->permissions & (1 << 5)) == true);
+        $guilds = array_filter($guilds, static fn($guild) => ($guild->permissions & (1 << 5)));
 
         return $this->json($guilds, context: ['groups' => 'list']);
     }
